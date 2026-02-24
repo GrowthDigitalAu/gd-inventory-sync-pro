@@ -1,4 +1,19 @@
+import { useState, useEffect } from "react";
+
 export default function HowToUse() {
+    const [isStylesLoaded, setIsStylesLoaded] = useState(false);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setIsStylesLoaded(true);
+        }, 100);
+        return () => clearTimeout(timer);
+    }, []);
+
+    if (!isStylesLoaded) {
+        return null;
+    }
+
     return (
         <s-page heading="How To Use">
             <s-box paddingBlockStart="large" paddingBlockEnd="large">

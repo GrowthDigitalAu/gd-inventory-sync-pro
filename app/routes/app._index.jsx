@@ -1,4 +1,5 @@
 import { authenticate } from "../shopify.server";
+import { useState, useEffect } from "react";
 
 export const loader = async ({ request }) => {
   await authenticate.admin(request);
@@ -6,6 +7,19 @@ export const loader = async ({ request }) => {
 };
 
 export default function Index() {
+    const [isStylesLoaded, setIsStylesLoaded] = useState(false);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setIsStylesLoaded(true);
+        }, 100);
+        return () => clearTimeout(timer);
+    }, []);
+
+    if (!isStylesLoaded) {
+        return null;
+    }
+
   return (
     <s-page heading="Welcome to Inventory Management">
       <s-box paddingBlockStart="large" paddingBlockEnd="large">

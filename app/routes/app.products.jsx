@@ -1,4 +1,5 @@
 import { useLoaderData, useNavigate, useSearchParams } from "react-router";
+import { useState, useEffect } from "react";
 import { authenticate } from "../shopify.server";
 import { Pagination } from "@shopify/polaris";
 
@@ -78,6 +79,15 @@ export default function ProductsPage() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
 
+    const [isStylesLoaded, setIsStylesLoaded] = useState(false);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setIsStylesLoaded(true);
+        }, 100);
+        return () => clearTimeout(timer);
+    }, []);
+
     const currentPage = parseInt(searchParams.get("page") || "1", 10);
 
     const handlePagination = (direction, cursor) => {
@@ -94,6 +104,10 @@ export default function ProductsPage() {
     const startItem = (currentPage - 1) * 10 + 1;
     const endItem = Math.min(startItem + products.length - 1, totalCount);
     const paginationLabel = totalCount > 0 ? `${startItem}-${endItem} of ${totalCount} products` : "No products";
+
+    if (!isStylesLoaded) {
+        return null;
+    }
 
     if (products.length === 0) {
         return (

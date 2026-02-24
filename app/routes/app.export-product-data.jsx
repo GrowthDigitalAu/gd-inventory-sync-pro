@@ -340,8 +340,17 @@ export default function ExportProductData() {
     const [progress, setProgress] = useState(0);
     const [isProgressVisible, setIsProgressVisible] = useState(false);
     
-    // Explicit state to track the active export details
     const [currentExport, setCurrentExport] = useState(null);
+
+    const [isStylesLoaded, setIsStylesLoaded] = useState(false);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setIsStylesLoaded(true);
+        }, 100);
+        return () => clearTimeout(timer);
+    }, []);
+
 
     const isLoading = fetcher.state === "submitting" || fetcher.state === "loading" || !!currentExport;
     const locations = loaderFetcher.data?.locations || [];
@@ -454,6 +463,10 @@ export default function ExportProductData() {
             { method: "POST" }
         );
     };
+
+    if (!isStylesLoaded) {
+        return null;
+    }
 
     return (
         <s-page heading="Export Product Inventory Data">

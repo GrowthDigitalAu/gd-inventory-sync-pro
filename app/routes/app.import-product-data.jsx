@@ -413,6 +413,15 @@ export default function ImportProductData() {
     const fetcher = useFetcher();
     const loaderFetcher = useFetcher();
     const pollFetcher = useFetcher(); 
+
+    const [isStylesLoaded, setIsStylesLoaded] = useState(false);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setIsStylesLoaded(true);
+        }, 100);
+        return () => clearTimeout(timer);
+    }, []);
     
     const [file, setFile] = useState(null);
     const [parsedData, setParsedData] = useState(null);
@@ -574,6 +583,10 @@ export default function ImportProductData() {
     }, [isLoading, validatedResults, finalResults]);
 
     const displayResults = finalResults || validatedResults;
+
+    if (!isStylesLoaded) {
+        return null; // Or return a loading spinner / skeleton
+    }
 
     return (
         <s-page heading="Import Product Inventory Data">
