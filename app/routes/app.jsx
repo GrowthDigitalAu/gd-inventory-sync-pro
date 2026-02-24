@@ -1,7 +1,6 @@
-import { Outlet, useLoaderData, useRouteError } from "react-router";
+import { Outlet, useLoaderData, useRouteError, useNavigation } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
-import { NavMenu } from "@shopify/app-bridge-react";
 import { AppProvider as PolarisAppProvider } from "@shopify/polaris";
 import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 import enTranslations from "@shopify/polaris/locales/en.json";
@@ -18,17 +17,19 @@ export const loader = async ({ request }) => {
 
 export default function App() {
   const { apiKey } = useLoaderData();
+  const navigation = useNavigation();
+  const isLoading = navigation.state !== "idle";
 
   return (
     <AppProvider embedded apiKey={apiKey}>
-      <NavMenu>
-        <a href="/app" rel="home">Home</a>
-        <a href="/app/products">Get Products</a>
-        <a href="/app/import-product-data">Import Product Inventory Data</a>
-        <a href="/app/export-product-data">Export Product Inventory Data</a>
-        <a href="/app/how-to-use">How To Use</a>
-        {/* <a href="/app/settings">Settings</a> */}
-      </NavMenu>
+      {isLoading && <div className="loading-bar" />}
+      <s-app-nav>
+        <s-link href="/app" rel="home">GD: Inventory Sync Pro</s-link>
+        <s-link href="/app/products">Get Products</s-link>
+        <s-link href="/app/import-product-data">Import Product Inventory Data</s-link>
+        <s-link href="/app/export-product-data">Export Product Inventory Data</s-link>
+        <s-link href="/app/how-to-use">How To Use</s-link>
+      </s-app-nav>
       <PolarisAppProvider i18n={enTranslations}>
         <Outlet />
       </PolarisAppProvider>

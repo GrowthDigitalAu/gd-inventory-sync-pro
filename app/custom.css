@@ -2,26 +2,50 @@
 
 /* Prevent layout shift and flickering on page load */
 s-page {
-    display: block;
-    min-height: 100vh;
+  display: block;
+  min-height: 100vh;
 }
 
 s-section {
-    display: block;
-    min-height: 100px;
+  display: block;
+  min-height: 100px;
 }
 
 s-box {
-    display: block;
+  display: block;
 }
 
 s-select {
-    opacity: 1 !important;
-    visibility: visible !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 /* Ensure smooth rendering */
 * {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Global Loading Bar Animation */
+@keyframes loadingBar {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.loading-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: #91cdff;
+  z-index: 10000;
+  animation: loadingBar 1s ease-in-out infinite;
 }
