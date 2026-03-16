@@ -2,7 +2,7 @@
 
 client_id = "a7ddf8f98a8be987381c5fa1f8fb765e"
 name = "GD: Inventory Sync Pro"
-application_url = "https://inventory-management-gdum.onrender.com"
+application_url = "https://gd-inventory-sync-pro.growthdigital.com.au/"
 embedded = true
 
 [build]
@@ -29,7 +29,7 @@ scopes = "read_products, write_products, read_inventory, write_inventory, read_l
 
 [auth]
 redirect_urls = [
-    "https://inventory-management-gdum.onrender.com/auth/callback",
-    "https://inventory-management-gdum.onrender.com/auth/shopify/callback",
-    "https://inventory-management-gdum.onrender.com/api/auth/callback"
+    "https://gd-inventory-sync-pro.growthdigital.com.au/auth/callback",
+    "https://gd-inventory-sync-pro.growthdigital.com.au/auth/shopify/callback",
+    "https://gd-inventory-sync-pro.growthdigital.com.au/api/auth/callback"
 ]
