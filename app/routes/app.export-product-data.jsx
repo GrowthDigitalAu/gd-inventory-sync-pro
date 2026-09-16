@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useFetcher } from "react-router";
 import { authenticate } from "../shopify.server";
 import ExcelJS from "exceljs";
@@ -456,6 +456,10 @@ export default function ExportProductData() {
 
 
     const handleExport = () => {
+        if (!selectedLocation || selectedLocation === "SELECT_LOCATION") {
+            shopify.toast.show("Choose a location before exporting.", { duration: 5000 });
+            return;
+        }
         setProgress(0);
         setIsProgressVisible(true);
         fetcher.submit(
@@ -469,53 +473,93 @@ export default function ExportProductData() {
     }
 
     return (
-        <s-page heading="Export Product Inventory Data">
-             <s-box paddingBlockStart="large" paddingBlockEnd="large">
-                <s-section heading='Select a location to filter the export, or "All Locations" to export all locations.'>
-                    <s-select
-                        className="export-select-dropdown"
-                        label="Choose Location"
-                        value={selectedLocation}
-                        onChange={(e) => setSelectedLocation(e.target.value)}
-                    >
-                        <s-option value="SELECT_LOCATION" disabled>- Select -</s-option>
-                        <s-option value="ALL_LOCATIONS">All Locations</s-option>
-                        <s-option-group label="Available Store Locations">
-                            {locations.map((location) => (
-                                <s-option key={location.id} value={location.id}>
-                                    {location.name}
-                                </s-option>
-                            ))}
-                        </s-option-group>
-                    </s-select>
-                    <s-button
-                        variant="primary"
-                        onClick={handleExport}
-                        loading={isLoading ? "true" : undefined}
-                        disabled={!selectedLocation || selectedLocation === "SELECT_LOCATION" ? "disabled" : undefined}
-                        paddingBlock="large"
-                    >
-                        Export Product Data
-                    </s-button>
-                </s-section>
-            </s-box>
+        <s-page heading="Export Product Inventory Data" inlineSize="large">
+            <div className="page-frame">
+                <div className="app-layout-with-aside">
+                    <div className="primary-workspace">
+                        <s-section heading="Download Inventory Workbook">
+                            <div className="source-panel">
+                                <div className="source-copy">
+                                    <p className="panel-title">Current Shopify inventory quantities</p>
+                                    <p className="panel-copy">Export product title, SKU, option values, inventory location, and available quantity into an Excel workbook.</p>
+                                    <div className="file-meta">
+                                        <span>Format: .xlsx</span>
+                                        <span>{selectedLocation === "ALL_LOCATIONS" ? "All locations" : "Single location"}</span>
+                                    </div>
+                                </div>
+                                <div className="source-actions">
+                                    <s-select
+                                        className="export-select-dropdown"
+                                        label="Choose Location"
+                                        value={selectedLocation}
+                                        onChange={(e) => setSelectedLocation(e.target.value)}
+                                    >
+                                        <s-option value="SELECT_LOCATION" disabled>- Select -</s-option>
+                                        <s-option value="ALL_LOCATIONS">All Locations</s-option>
+                                        <s-option-group label="Available Store Locations">
+                                            {locations.map((location) => (
+                                                <s-option key={location.id} value={location.id}>
+                                                    {location.name}
+                                                </s-option>
+                                            ))}
+                                        </s-option-group>
+                                    </s-select>
+                                    <s-button
+                                        variant="primary"
+                                        onClick={handleExport}
+                                        loading={isLoading ? "true" : undefined}
+                                        disabled={!selectedLocation || selectedLocation === "SELECT_LOCATION" ? "true" : undefined}
+                                    >
+                                        Export Inventory
+                                    </s-button>
+                                </div>
+                            </div>
+                        </s-section>
+
+                        <div className="section-gap">
+                            <div className="action-grid three-columns">
+                                <s-section heading="Included Columns">
+                                    <div className="action-panel compact">
+                                        <p className="panel-copy">Product title, SKU, option values, inventory location, and quantity available.</p>
+                                    </div>
+                                </s-section>
+                                <s-section heading="Best Use">
+                                    <div className="action-panel compact">
+                                        <p className="panel-copy">Export before a major inventory update to keep a clean backup and import-ready template.</p>
+                                    </div>
+                                </s-section>
+                                <s-section heading="Next Workflow">
+                                    <div className="action-panel compact">
+                                        <p className="panel-copy">Edit Quantity Available values, keep SKU unchanged, then use the import preview before updating Shopify.</p>
+                                    </div>
+                                </s-section>
+                            </div>
+                        </div>
+                    </div>
+
+                    <aside className="growth-aside" aria-label="Growth Digital Shopify support">
+                        <s-section heading="Export Tips">
+                            <div className="growth-panel">
+                                <div className="growth-brand">
+                                    <span className="growth-brand-icon" aria-hidden="true">GD</span>
+                                    <p className="growth-kicker">Growth Digital</p>
+                                </div>
+                                <p className="growth-title">Use exports as your backup before every bulk change.</p>
+                                <p className="panel-copy">The exported workbook matches the import flow, so it is the safest starting point for quantity updates.</p>
+                                <div className="growth-list">
+                                    <span>Keep SKU unchanged</span>
+                                    <span>Edit Quantity Available</span>
+                                    <span>Preview before import</span>
+                                </div>
+                            </div>
+                        </s-section>
+                    </aside>
+                </div>
+            </div>
 
             {isProgressVisible && (
-                <div style={{
-                    position: 'fixed',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    zIndex: 1000,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '16px',
-                    width: '300px'
-                }}>
-                    <div style={{ width: '100%' }}>
-                        <ProgressBar progress={progress} size="small" />
-                    </div>
+                <div className="progress-float">
+                    <ProgressBar progress={progress} size="small" />
                     <s-text variant="bodyLg">Exporting product inventory...</s-text>
                 </div>
             )}
