@@ -218,12 +218,13 @@ export const action = async ({ request }) => {
     const mapping = mappingString ? JSON.parse(mappingString) : {};
     const skuColumn = mapping.sku || "SKU";
     const quantityColumn = mapping.quantity || "Quantity Available";
-    const locationColumn = mapping.location || "Inventory Location";
+    const isAllLocationsMode = locationId === "ALL_LOCATIONS";
+    const locationColumn = isAllLocationsMode ? (mapping.location || "Inventory Location") : "";
     const rows = rawRows.map((row) => ({
         ...row,
         "SKU": row[skuColumn],
         "Quantity Available": row[quantityColumn],
-        "Inventory Location": locationColumn ? row[locationColumn] : row["Inventory Location"]
+        "Inventory Location": locationColumn ? row[locationColumn] : ""
     }));
 
     const results = {
@@ -261,8 +262,6 @@ export const action = async ({ request }) => {
         results.counts.failed = results.failedRows.length;
         return { success: true, results };
     }
-
-    const isAllLocationsMode = locationId === "ALL_LOCATIONS";
 
     // 1. HELPER: Fetch All Locations
     let allLocations = [];
@@ -645,8 +644,7 @@ export default function ImportProductData() {
         && selectedLocation
         && selectedLocation !== "SELECT_LOCATION"
         && columnMapping.sku
-        && columnMapping.quantity
-        && (selectedLocation !== "ALL_LOCATIONS" || columnMapping.location);
+        && columnMapping.quantity;
 
     useEffect(() => {
         loaderFetcher.load("/app/import-product-data");
@@ -844,10 +842,7 @@ export default function ImportProductData() {
                 {
                     "Supplier SKU": "ABC-123",
                     "Available Stock": 25,
-                    "Warehouse": selectedLocation === "ALL_LOCATIONS" ? "Main Warehouse" : "",
-                    "Notes": selectedLocation === "ALL_LOCATIONS"
-                        ? "Map Warehouse to Location when importing all locations"
-                        : "Select a Shopify location in the app before previewing"
+                    "Notes": "Select the Shopify location in the app before previewing"
                 }
             ]
         });
@@ -930,7 +925,6 @@ export default function ImportProductData() {
                                         onChange={(e) => setSelectedLocation(e.target.value)}
                                     >
                                         <s-option value="SELECT_LOCATION" disabled>- Select -</s-option>
-                                        <s-option value="ALL_LOCATIONS">All Locations</s-option>
                                         <s-option-group label="Available Store Locations">
                                             {locations.map((location) => (
                                                 <s-option key={location.id} value={location.id}>
@@ -954,11 +948,6 @@ export default function ImportProductData() {
                                     </div>
                                 </div>
                             </div>
-                            {selectedLocation === "ALL_LOCATIONS" && (
-                                <div className="section-note warning-note">
-                                    <strong>Location column required.</strong> All Locations mode uses a mapped supplier location or warehouse column to decide where each SKU should be updated.
-                                </div>
-                            )}
                         </s-section>
 
                         {parsedData?.length > 0 && (
@@ -967,7 +956,7 @@ export default function ImportProductData() {
                                     <div className="status-strip">
                                         <span>{columnMapping.sku ? `SKU: ${columnMapping.sku}` : "SKU column needed"}</span>
                                         <span>{columnMapping.quantity ? `Quantity: ${columnMapping.quantity}` : "Quantity column needed"}</span>
-                                        <span>{selectedLocation === "ALL_LOCATIONS" ? "Location comes from file" : "Location selected in app"}</span>
+                                        <span>Location selected above</span>
                                     </div>
                                     <div className="mapping-grid">
                                         <label>
@@ -987,17 +976,6 @@ export default function ImportProductData() {
                                                 onChange={(event) => setColumnMapping((current) => ({ ...current, quantity: event.target.value }))}
                                             >
                                                 <option value="">Select a supplier column</option>
-                                                {headers.map((header) => <option key={header} value={header}>{header}</option>)}
-                                            </select>
-                                        </label>
-                                        <label>
-                                            <span>Location column</span>
-                                            <select
-                                                value={columnMapping.location}
-                                                onChange={(event) => setColumnMapping((current) => ({ ...current, location: event.target.value }))}
-                                                disabled={selectedLocation !== "ALL_LOCATIONS"}
-                                            >
-                                                <option value="">Use selected Shopify location</option>
                                                 {headers.map((header) => <option key={header} value={header}>{header}</option>)}
                                             </select>
                                         </label>
@@ -1230,7 +1208,7 @@ export default function ImportProductData() {
                                 <div className="growth-list">
                                     <span>SKU is required</span>
                                     <span>CSV and Excel supported</span>
-                                    <span>All locations need location names</span>
+                                    <span>Location is selected in the app</span>
                                 </div>
                             </div>
                         </s-section>
