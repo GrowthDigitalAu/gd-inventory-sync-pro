@@ -457,6 +457,84 @@ s-select {
   font-size: 13px;
 }
 
+.growth-link {
+  color: #f0583c;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.growth-link:hover,
+.growth-link:focus {
+  color: #1c1c1c;
+  text-decoration: underline;
+}
+
+.help-layout {
+  display: grid;
+  grid-template-columns: minmax(720px, 1fr) 320px;
+  gap: 20px;
+  align-items: start;
+}
+
+.help-steps {
+  display: grid;
+  gap: 12px;
+}
+
+.help-step {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 12px;
+  align-items: start;
+  border-bottom: 1px solid #e3e3e3;
+  padding-bottom: 12px;
+}
+
+.help-step:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.help-step span {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #f3f9ff;
+  color: #005bd3;
+  font-weight: 700;
+}
+
+.help-step strong,
+.help-card strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #202223;
+}
+
+.help-step p,
+.help-card p {
+  margin: 0;
+  color: #616161;
+  line-height: 1.45;
+}
+
+.help-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.help-card {
+  min-height: 108px;
+  border: 1px solid #e3e3e3;
+  border-radius: 8px;
+  padding: 12px;
+  background: #ffffff;
+}
+
 @media (max-width: 760px) {
   .page-frame {
     padding: 20px 12px 32px;
@@ -472,7 +550,9 @@ s-select {
   .summary-grid,
   .action-grid.two-columns,
   .action-grid.three-columns,
-  .app-layout-with-aside {
+  .app-layout-with-aside,
+  .help-layout,
+  .help-card-grid {
     grid-template-columns: 1fr;
   }
 
@@ -488,7 +568,9 @@ s-select {
 }
 
 @media (min-width: 761px) and (max-width: 1180px) {
-  .app-layout-with-aside {
+  .app-layout-with-aside,
+  .help-layout,
+  .help-card-grid {
     grid-template-columns: 1fr;
   }
 

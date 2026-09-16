@@ -25,7 +25,6 @@ export default function App() {
       {isLoading && <div className="loading-bar" />}
       <s-app-nav>
         <s-link href="/app" rel="home">GD: Inventory Sync Pro</s-link>
-        <s-link href="/app/products">Get Products</s-link>
         <s-link href="/app/import-product-data">Import Product Inventory Data</s-link>
         <s-link href="/app/export-product-data">Export Product Inventory Data</s-link>
         <s-link href="/app/how-to-use">How To Use</s-link>
