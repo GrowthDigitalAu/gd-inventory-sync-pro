@@ -227,6 +227,37 @@ s-select {
   margin: 0 0 14px;
 }
 
+.mapping-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin-bottom: 16px;
+}
+
+.mapping-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #303030;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.mapping-grid select {
+  min-height: 36px;
+  border: 1px solid #8a8a8a;
+  border-radius: 6px;
+  padding: 6px 10px;
+  background: #ffffff;
+  color: #202223;
+}
+
+.mapping-grid select:disabled {
+  border-color: #d9d9d9;
+  background: #f7f7f7;
+  color: #8a8a8a;
+}
+
 .section-note {
   margin-top: 14px;
   border: 1px solid #e3e3e3;

@@ -105,6 +105,17 @@ const tableColumns = (row) => {
     ];
 };
 
+const guessColumn = (headers, candidates) => {
+    const normalizedCandidates = candidates.map((candidate) =>
+        candidate.toLowerCase().replace(/[^a-z0-9]/g, "")
+    );
+
+    return headers.find((header) => {
+        const normalizedHeader = header.toLowerCase().replace(/[^a-z0-9]/g, "");
+        return normalizedCandidates.some((candidate) => normalizedHeader === candidate || normalizedHeader.includes(candidate));
+    }) || "";
+};
+
 export const loader = async ({ request }) => {
     const { admin } = await authenticate.admin(request);
     const url = new URL(request.url);
@@ -201,8 +212,19 @@ export const action = async ({ request }) => {
     const formData = await request.formData();
     const dataString = formData.get("data");
     const locationId = formData.get("locationId");
+    const mappingString = formData.get("mapping");
     const dryRun = formData.get("dryRun") === "true";
-    const rows = JSON.parse(dataString);
+    const rawRows = JSON.parse(dataString);
+    const mapping = mappingString ? JSON.parse(mappingString) : {};
+    const skuColumn = mapping.sku || "SKU";
+    const quantityColumn = mapping.quantity || "Quantity Available";
+    const locationColumn = mapping.location || "Inventory Location";
+    const rows = rawRows.map((row) => ({
+        ...row,
+        "SKU": row[skuColumn],
+        "Quantity Available": row[quantityColumn],
+        "Inventory Location": locationColumn ? row[locationColumn] : row["Inventory Location"]
+    }));
 
     const results = {
         total: rows.length,
@@ -229,6 +251,13 @@ export const action = async ({ request }) => {
     if (!locationId || locationId === "SELECT_LOCATION") {
         results.errors.push("Choose an inventory location before importing.");
         results.failedRows = rows.map((row) => ({ ...row, "Status": "Failed", "Error Reason": "Missing inventory location" }));
+        results.counts.failed = results.failedRows.length;
+        return { success: true, results };
+    }
+
+    if (!skuColumn || !quantityColumn || (locationId === "ALL_LOCATIONS" && !locationColumn)) {
+        results.errors.push("Choose the required supplier feed columns before previewing.");
+        results.failedRows = rows.map((row) => ({ ...row, "Status": "Failed", "Error Reason": "Missing column mapping" }));
         results.counts.failed = results.failedRows.length;
         return { success: true, results };
     }
@@ -587,6 +616,11 @@ export default function ImportProductData() {
     const [sourceName, setSourceName] = useState("");
     const [parsedData, setParsedData] = useState(null);
     const [headers, setHeaders] = useState([]);
+    const [columnMapping, setColumnMapping] = useState({
+        sku: "",
+        quantity: "",
+        location: ""
+    });
     const [selectedLocation, setSelectedLocation] = useState("SELECT_LOCATION");
     const [progress, setProgress] = useState(0);
     const [isProgressVisible, setIsProgressVisible] = useState(false);
@@ -607,7 +641,12 @@ export default function ImportProductData() {
     const isLoading = fetcher.state === "submitting" || fetcher.state === "loading";
     const locations = loaderFetcher.data?.locations || [];
     const isUpdatingShopify = !!validatedResults?.bulkOperationId && !finalResults;
-    const canPreview = parsedData?.length > 0 && selectedLocation && selectedLocation !== "SELECT_LOCATION";
+    const canPreview = parsedData?.length > 0
+        && selectedLocation
+        && selectedLocation !== "SELECT_LOCATION"
+        && columnMapping.sku
+        && columnMapping.quantity
+        && (selectedLocation !== "ALL_LOCATIONS" || columnMapping.location);
 
     useEffect(() => {
         loaderFetcher.load("/app/import-product-data");
@@ -629,6 +668,7 @@ export default function ImportProductData() {
         fetcher.submit({
             data: JSON.stringify(parsedData),
             locationId: selectedLocation,
+            mapping: JSON.stringify(columnMapping),
             dryRun: isDryRun ? "true" : "false"
         }, { method: "POST" });
     };
@@ -662,6 +702,11 @@ export default function ImportProductData() {
 
                 setParsedData(parsedWorkbook.rows);
                 setHeaders(parsedWorkbook.headers);
+                setColumnMapping({
+                    sku: guessColumn(parsedWorkbook.headers, ["SKU", "Product SKU", "Item SKU", "Item Code", "Code", "Part Number"]),
+                    quantity: guessColumn(parsedWorkbook.headers, ["Quantity Available", "Available", "Qty", "Quantity", "Stock", "Stock On Hand", "On Hand", "Inventory"]),
+                    location: guessColumn(parsedWorkbook.headers, ["Inventory Location", "Location", "Warehouse", "Store", "Branch"])
+                });
                 shopify.toast.show(`File loaded: ${parsedWorkbook.rows.length} rows. Preview before updating Shopify.`, { duration: 5000 });
             };
             if (selectedFile.name.toLowerCase().endsWith(".csv")) {
@@ -795,14 +840,14 @@ export default function ImportProductData() {
 
     const downloadImportTemplate = () => {
         downloadRowsWorkbook("inventory-import-template.xlsx", {
-            "Inventory Import Template": [
+            "Supplier Feed Template": [
                 {
-                    "SKU": "ABC-123",
-                    "Inventory Location": selectedLocation === "ALL_LOCATIONS" ? "Main Warehouse" : "",
-                    "Quantity Available": 25,
+                    "Supplier SKU": "ABC-123",
+                    "Available Stock": 25,
+                    "Warehouse": selectedLocation === "ALL_LOCATIONS" ? "Main Warehouse" : "",
                     "Notes": selectedLocation === "ALL_LOCATIONS"
-                        ? "Inventory Location is required when importing all locations"
-                        : "Inventory Location can be blank for a single selected location"
+                        ? "Map Warehouse to Location when importing all locations"
+                        : "Select a Shopify location in the app before previewing"
                 }
             ]
         });
@@ -870,8 +915,8 @@ export default function ImportProductData() {
                                     style={{ display: 'none' }}
                                 />
                                 <div className="source-copy">
-                                    <p className="panel-title">Excel or CSV inventory workbook</p>
-                                    <p className="panel-copy">Choose a Shopify location, load a file with SKU and Quantity Available columns, preview the changes, then update Shopify.</p>
+                                    <p className="panel-title">Supplier or wholesaler inventory feed</p>
+                                    <p className="panel-copy">Upload the supplier file, map its SKU and stock quantity columns, choose the Shopify location to update, then preview changes before updating Shopify.</p>
                                     <div className="file-meta">
                                         <span>{selectedFileName}</span>
                                         {parsedData?.length > 0 && <span>{parsedData.length} rows loaded</span>}
@@ -911,18 +956,51 @@ export default function ImportProductData() {
                             </div>
                             {selectedLocation === "ALL_LOCATIONS" && (
                                 <div className="section-note warning-note">
-                                    <strong>Inventory Location column required.</strong> All Locations mode uses the location name in each row to decide where each SKU should be updated.
+                                    <strong>Location column required.</strong> All Locations mode uses a mapped supplier location or warehouse column to decide where each SKU should be updated.
                                 </div>
                             )}
                         </s-section>
 
                         {parsedData?.length > 0 && (
                             <div className="section-gap">
-                                <s-section heading="Preview Inventory Changes">
+                                <s-section heading="Map Supplier Feed Columns">
                                     <div className="status-strip">
-                                        <span>{headers.includes("SKU") ? "SKU column found" : "SKU column needed"}</span>
-                                        <span>{headers.includes("Quantity Available") ? "Quantity column found" : "Quantity Available column needed"}</span>
+                                        <span>{columnMapping.sku ? `SKU: ${columnMapping.sku}` : "SKU column needed"}</span>
+                                        <span>{columnMapping.quantity ? `Quantity: ${columnMapping.quantity}` : "Quantity column needed"}</span>
                                         <span>{selectedLocation === "ALL_LOCATIONS" ? "Location comes from file" : "Location selected in app"}</span>
+                                    </div>
+                                    <div className="mapping-grid">
+                                        <label>
+                                            <span>SKU column</span>
+                                            <select
+                                                value={columnMapping.sku}
+                                                onChange={(event) => setColumnMapping((current) => ({ ...current, sku: event.target.value }))}
+                                            >
+                                                <option value="">Select a supplier column</option>
+                                                {headers.map((header) => <option key={header} value={header}>{header}</option>)}
+                                            </select>
+                                        </label>
+                                        <label>
+                                            <span>Quantity column</span>
+                                            <select
+                                                value={columnMapping.quantity}
+                                                onChange={(event) => setColumnMapping((current) => ({ ...current, quantity: event.target.value }))}
+                                            >
+                                                <option value="">Select a supplier column</option>
+                                                {headers.map((header) => <option key={header} value={header}>{header}</option>)}
+                                            </select>
+                                        </label>
+                                        <label>
+                                            <span>Location column</span>
+                                            <select
+                                                value={columnMapping.location}
+                                                onChange={(event) => setColumnMapping((current) => ({ ...current, location: event.target.value }))}
+                                                disabled={selectedLocation !== "ALL_LOCATIONS"}
+                                            >
+                                                <option value="">Use selected Shopify location</option>
+                                                {headers.map((header) => <option key={header} value={header}>{header}</option>)}
+                                            </select>
+                                        </label>
                                     </div>
                                     {isProgressVisible && (
                                         <div className="progress-container">
